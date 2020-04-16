@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>image/min.png</file>
+        <file>image/exit.png</file>
+        <file>image/max1.png</file>
+        <file>image/max2.png</file>
+        <file>image/back.png</file>
+        <file>image/correct.png</file>
+        <file>image/wrong.png</file>
+        <file>image/金属按键.png</file>
+    </qresource>
+</RCC>
