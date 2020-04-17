@@ -26,6 +26,18 @@ private slots:
     void on_btnMax_clicked();
     void on_btnExit_clicked();
     void login_mainwindow();
+    void login_camera_calibration();
+    void openCamara();
+    void readFarme();
+    void closeCamara();
+    void takingPictures();
+    void clearFolder();
+    void findChess();
+    void writeProjectorCalibration(cv::Mat cameraMatrix,cv::Mat distCoeffs);
+    void close_calibration();
+    camera_config readCameraCalibration();
+    QImage Mat2QImage(cv::Mat cvImg);
+
 
 private:
     Ui::projector_calibration *ui;
@@ -36,6 +48,14 @@ private:
     QRect mLocation;
     QFont mIconFont;
 
+    cv::Mat frame;
+    cv::VideoCapture capture;
+    QImage image;
+    QTimer *timer;
+    double rate;
+    cv::VideoWriter writer;
+    double num;
+    camera_config camera_calibration_config;
 };
 
 #endif // PROJECTOR_CALIBRATION_H

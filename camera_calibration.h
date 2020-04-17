@@ -1,18 +1,11 @@
 ﻿#ifndef CAMERA_CALIBRATION_H
 #define CAMERA_CALIBRATION_H
 #include "mainwindow.h"
-#include "opencv2/opencv.hpp"
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2\imgproc\imgproc.hpp>
-#include <opencv2\imgproc\types_c.h>
-#include "qlabel.h"
-#include <QTimer>
-#include <QDir>
-#include <QMessageBox>
+
 namespace Ui {
 class camera_calibration;
 }
+
 
 class camera_calibration : public QMainWindow
 {
@@ -21,6 +14,7 @@ class camera_calibration : public QMainWindow
 public:
     explicit camera_calibration(QWidget *parent = nullptr);
     ~camera_calibration();
+
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
@@ -40,6 +34,9 @@ private slots:
     void takingPictures();
     void clearFolder();
     void findChess();
+    void writeCalibration(cv::Mat cameraMatrix,cv::Mat distCoeffs);
+    void close_calibration();
+    camera_config readCalibration();
 
 
 private:

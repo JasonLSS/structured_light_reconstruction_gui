@@ -1,8 +1,6 @@
 ﻿#include "camera_calibration.h"
 #include "ui_camera_calibration.h"
 
-using namespace cv;
-using namespace std;
 #pragma execution_character_set("utf-8")
 const int g_nBorder = 6;
 
@@ -28,7 +26,7 @@ camera_calibration::camera_calibration(QWidget *parent) :
     connect(ui->btnBack,SIGNAL(clicked()),this,SLOT(login_mainwindow()));
     connect(ui->opencamerabt, SIGNAL(clicked()), this, SLOT(openCamara()));
     connect(ui->takephotobt, SIGNAL(clicked()), this, SLOT(takingPictures()));
-    connect(ui->closecamerabt, SIGNAL(clicked()), this, SLOT(closeCamara()));
+    connect(ui->closecamerabt, SIGNAL(clicked()), this, SLOT(close_calibration()));
     connect(ui->clearbt, SIGNAL(clicked()), this, SLOT(clearFolder()));
     timer = new QTimer(this);
     ui->label->setText("摄像头关闭");
@@ -92,12 +90,12 @@ void camera_calibration::findChess()
     dir.setFilter(QDir::Files);
     int aqXnum = 9;
     int aqYnum = 6;
-    cv::Size square_size = cv::Size(12, 12);//实测标定板方格大小
+    cv::Size square_size = cv::Size(12, 12);
     cv::Size image_size;
     printf("Start scan corner\n");
     cv::Mat img;
     std::vector<cv::Point2f> image_points;
-    std::vector<std::vector<cv::Point2f>> image_points_seq; /* 保存检测到的所有角点 */
+    std::vector<std::vector<cv::Point2f>> image_points_seq;
     for (int i = 0; i < dir.count(); i++){
         cv::Mat cb_source = cv::imread((path + dir[i]).toStdString());
         if (cv::findChessboardCorners(cb_source, cv::Size(aqXnum, aqYnum), image_points, 0) == 0) {
@@ -126,9 +124,14 @@ void camera_calibration::findChess()
         }
     }
     std::cout << "Effective picture number:" << image_points_seq.size() << std::endl;
+
+    QString st;
+    st.setNum(image_points_seq.size());
     if(image_points_seq.empty()){
+        QMessageBox::warning(this,"警告","标定失败，无有效图片");
         return;
     }
+    QMessageBox::about(this,"提示","标定成功，有效图片数量:"+st+"张");
 
     std::vector<std::vector<cv::Point3f>> object_points;
     cv::Mat cameraMatrix = cv::Mat(3, 3, CV_32FC1, cv::Scalar::all(0));
@@ -141,7 +144,7 @@ void camera_calibration::findChess()
         for (int i = 0; i < aqYnum; i++) {
             for (int j = 0; j < aqXnum; j++) {
                 cv::Point3f tempPoint;
-                /* 假设标定板放在世界坐标系中z=0的平面上 */
+
                 tempPoint.x = i * square_size.width;
                 tempPoint.y = j * square_size.height;
                 tempPoint.z = 0;
@@ -154,13 +157,52 @@ void camera_calibration::findChess()
     cv::calibrateCamera(object_points, image_points_seq, image_size, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
                         CALIB_FIX_K3);
 
-    std::cout << "cameraMatrix:\n" << cameraMatrix << std::endl;
-    std::cout << "distCoeffs:\n" << distCoeffs << std::endl;
+
     cv::Mat cb_source = cv::imread((path +dir[0]).toStdString());
     cv::Mat cb_final;
     cv::undistort(cb_source, cb_final, cameraMatrix, distCoeffs);
     QImage s = Mat2QImage(cb_final);
     ui->label->setPixmap(QPixmap::fromImage(s));
+    writeCalibration(cameraMatrix,distCoeffs);
+    camera_config read = readCalibration();
+    std::cout << "cameraMatrix:\n" << read.cameraMatrix << std::endl;
+    std::cout << "distCoeffs:\n" << read.distCoeffs << std::endl;
+}
+
+void camera_calibration::writeCalibration(cv::Mat cameraMatrix,cv::Mat distCoeffs){
+    QString config_path = QApplication::applicationDirPath()+"/config/";
+    QDir config_Dir(config_path);
+    if(!config_Dir.exists()){
+        config_Dir.mkdir(config_path);
+    }
+    FileStorage fs((config_path+"camera.xml").toStdString(), FileStorage::WRITE);
+    fs << "cameraMatrix" << cameraMatrix;
+    fs << "distCoeffs" << distCoeffs;
+    fs.release();
+}
+camera_config camera_calibration::readCalibration(){
+    camera_config temp;
+    QString config_path = QApplication::applicationDirPath()+"/config/";
+    QDir config_Dir(config_path);
+    if(!config_Dir.exists()){
+        QMessageBox::warning(this,"警告","未找到标定文件");
+        return temp;
+    }
+    QFileInfo fileInfo(config_path + "camera.xml");
+    if(!fileInfo.isFile())
+    {
+        QMessageBox::warning(this,"警告","未找到标定文件");
+        return temp;
+    }
+    FileStorage fs((config_path+"camera.xml").toStdString(), FileStorage::READ);
+    cv::Mat cameraMatrix;
+    cv::Mat distCoeffs;
+    fs["cameraMatrix"] >> cameraMatrix;
+    fs["distCoeffs"] >> distCoeffs;
+    fs.release();
+    temp.distCoeffs = distCoeffs;
+    temp.cameraMatrix = cameraMatrix;
+    return temp;
 }
 
 void camera_calibration::readFarme()
@@ -181,10 +223,16 @@ void camera_calibration::clearFolder()
         QString path = QApplication::applicationDirPath()+"/photo/";
         QDir dir(path);
         qDebug()<<"remove file:\n";
-        dir.setFilter(QDir::Files);
         for (int i = 0; i < dir.count(); i++){
             qDebug()<<dir[i];
             dir.remove(dir[i]);
+        }
+        QString count_path = QApplication::applicationDirPath()+"/photo/count/";
+        QDir count_dir(count_path);
+        qDebug()<<"remove file:\n";
+        for (int i = 0; i < count_dir.count(); i++){
+            qDebug()<<count_dir[i];
+            count_dir.remove(count_dir[i]);
         }
         num = 1;
     }
@@ -219,12 +267,19 @@ void camera_calibration::closeCamara()
     timer->stop();
     ui->label->setText("摄像头关闭");
     frame.release();
+
+}
+
+void camera_calibration::close_calibration()
+{
+    closeCamara();
     findChess();
 }
 
 void camera_calibration::login_mainwindow(){
     qDebug()<<"mainwindow";
     MainWindow *win = new MainWindow;
+    closeCamara();
     win->show();
     this->close();
 }

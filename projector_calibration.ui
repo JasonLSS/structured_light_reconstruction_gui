@@ -239,6 +239,45 @@ QPushButton#btnExit:hover{
        <property name="spacing">
         <number>0</number>
        </property>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>摄像头关闭</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QPushButton" name="opencamerabt">
+           <property name="text">
+            <string>打开摄像头</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="clearbt">
+           <property name="text">
+            <string>清空标定文件</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="takephotobt">
+           <property name="text">
+            <string>拍摄标定照片</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="closecamerabt">
+           <property name="text">
+            <string>关闭摄像头并标定</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
       </layout>
      </widget>
     </item>

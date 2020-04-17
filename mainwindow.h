@@ -6,6 +6,23 @@
 #include <QDesktopWidget>
 #include <qt_windows.h>
 #include <QDebug>
+#include "opencv2/opencv.hpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2\imgproc\imgproc.hpp>
+#include <opencv2\imgproc\types_c.h>
+#include "qlabel.h"
+#include <QTimer>
+#include <QDir>
+#include <QMessageBox>
+
+using namespace cv;
+using namespace std;
+struct camera_config{
+    cv::Mat cameraMatrix;
+    cv::Mat distCoeffs;
+};
+
 namespace Ui {
 class MainWindow;
 }
