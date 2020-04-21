@@ -86,6 +86,9 @@ void projector_calibration::openCamara()
                 timer->start();
             }
         }
+        else{
+            QMessageBox::warning(this,"警告","无法打开摄像头，请检测设备连接");
+        }
 }
 
 void projector_calibration::findChess()
