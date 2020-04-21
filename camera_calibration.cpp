@@ -33,7 +33,7 @@ camera_calibration::camera_calibration(QWidget *parent) :
     num = 1;
 }
 
-QImage  Mat2QImage(cv::Mat cvImg)
+QImage camera_calibration::Mat2QImage(cv::Mat cvImg)
 {
     QImage qImg;
     if(cvImg.channels()==3)                             //3 channels color image
@@ -78,6 +78,9 @@ void camera_calibration::openCamara()
                 connect(timer, SIGNAL(timeout()), this, SLOT(readFarme()));
                 timer->start();
             }
+        }
+        else{
+            QMessageBox::warning(this,"警告","无法打开摄像头，请检测设备连接");
         }
 }
 

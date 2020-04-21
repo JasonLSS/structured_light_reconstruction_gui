@@ -232,11 +232,22 @@ QPushButton#btnExit:hover{
     </item>
     <item>
      <widget class="QWidget" name="widget" native="true">
-      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2,1">
+      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="3,1">
        <item>
         <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <family>微软雅黑 Light</family>
+           <pointsize>15</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
           <string/>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
