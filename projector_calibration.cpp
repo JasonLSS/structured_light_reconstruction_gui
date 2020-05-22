@@ -102,35 +102,53 @@ void projector_calibration::findChess()
     int aqYnum = 6;
     cv::Size square_size = cv::Size(12, 12);
     cv::Size image_size;
-    printf("Start scan corner\n");
+    cv::Size image_size2;
     cv::Mat img;
+    cv::Mat img2;
     std::vector<cv::Point2f> image_points;
     std::vector<std::vector<cv::Point2f>> image_points_seq;
+    std::vector<cv::Point2f> projector_points;
+    std::vector<std::vector<cv::Point2f>> projector_points_seq;
+    printf("Start scan corner\n");
     for (int i = 0; i < dir.count(); i++){
-        cv::Mat cb_source = cv::imread((path + dir[i]).toStdString());
-        if (cv::findChessboardCorners(cb_source, cv::Size(aqXnum, aqYnum), image_points, 0) == 0) {
+        cv::Mat source = cv::imread((path + dir[i]).toStdString());
+        cv::Mat camera_source = source(cv::Range(0,source.rows),cv::Range(0,source.cols/2));
+        cv::Mat projector_source = source(cv::Range(0,source.rows),cv::Range(source.cols/2,source.cols));
+        if (cv::findChessboardCorners(camera_source, cv::Size(aqXnum, aqYnum), image_points, 0) == 0 or
+                cv::findChessboardCorners(projector_source, cv::Size(aqXnum, aqYnum), projector_points, 0) == 0) {
             printf("Error: Corners not find\n");
             continue;
         } else {
-            cvtColor(cb_source, img, CV_RGBA2GRAY);
-            image_size = cb_source.size();
+            cvtColor(camera_source, img, CV_RGBA2GRAY);
+            image_size = camera_source.size();
             cv::cornerSubPix(img, image_points, cv::Size(11, 11), cv::Size(-1, -1),
                              cv::TermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 30, 0.01));
-
             image_points_seq.push_back(image_points);
-
             cv::Mat cb_corner;
-            cb_corner = cb_source.clone();
+            cb_corner = camera_source.clone();
             drawChessboardCorners(cb_corner, cv::Size(aqXnum, aqYnum), image_points, true);
             QString str;
-            QString temp_path = count_path+str.setNum(i+1)+".png";
+            QString temp_path = count_path+"camera"+str.setNum(i+1)+".png";
             qDebug()<<temp_path;
-
             if(!dir_count.exists()){
                dir_count.mkdir(count_path);
             }
-
             cv::imwrite(temp_path.toStdString(), cb_corner);
+
+            cvtColor(projector_source, img2, CV_RGBA2GRAY);
+            image_size2 = projector_source.size();
+            cv::cornerSubPix(img2, projector_points, cv::Size(11, 11), cv::Size(-1, -1),
+                             cv::TermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 30, 0.01));
+            projector_points_seq.push_back(projector_points);
+            cv::Mat cb_corner2;
+            cb_corner2 = projector_source.clone();
+            drawChessboardCorners(cb_corner2, cv::Size(aqXnum, aqYnum), projector_points, true);
+            temp_path = count_path+"projector"+str.setNum(i+1)+".png";
+            qDebug()<<temp_path;
+            if(!dir_count.exists()){
+               dir_count.mkdir(count_path);
+            }
+            cv::imwrite(temp_path.toStdString(), cb_corner2);
         }
     }
     std::cout << "Effective picture number:" << image_points_seq.size() << std::endl;
@@ -144,10 +162,15 @@ void projector_calibration::findChess()
     QMessageBox::about(this,"提示","标定成功，有效图片数量:"+st+"张");
 
     std::vector<std::vector<cv::Point3f>> object_points;
+    std::vector<std::vector<cv::Point3f>> worldPointsProj;
     cv::Mat cameraMatrix = cv::Mat(3, 3, CV_32FC1, cv::Scalar::all(0));
     cv::Mat distCoeffs = cv::Mat(1, 5, CV_32FC1, cv::Scalar::all(0));
+    cv::Mat projectorMatrix = cv::Mat(3, 3, CV_32FC1, cv::Scalar::all(0));
+    cv::Mat projectordistCoeffs = cv::Mat(1, 5, CV_32FC1, cv::Scalar::all(0));
     std::vector<cv::Mat> tvecsMat;
     std::vector<cv::Mat> rvecsMat;
+    std::vector<cv::Mat> protvecsMat;
+    std::vector<cv::Mat> prorvecsMat;
     QDir num_dir(count_path);
     for (int s = 0;s < image_points_seq.size();s++){
         std::vector<cv::Point3f> realPoint;
@@ -167,15 +190,21 @@ void projector_calibration::findChess()
     cv::calibrateCamera(object_points, image_points_seq, image_size, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
                         CALIB_FIX_K3);
 
-
+    fromCamToWorld(cameraMatrix, rvecsMat, tvecsMat, image_points_seq, worldPointsProj);
+    cv::calibrateCamera(worldPointsProj, projector_points_seq, image_size2, projectorMatrix, projectordistCoeffs,
+                        prorvecsMat, protvecsMat,CALIB_FIX_K3);
     cv::Mat cb_source = cv::imread((path +dir[0]).toStdString());
-    cv::Mat cb_final;
-    cv::undistort(cb_source, cb_final, cameraMatrix, distCoeffs);
-    QImage s = Mat2QImage(cb_final);
+    cv::Mat cb_camera;
+    cv::Mat cb_projector;
+    cv::undistort(cb_source, cb_camera, cameraMatrix, distCoeffs);
+    cv::undistort(cb_camera, cb_projector, projectorMatrix, projectordistCoeffs);
+    QImage s = Mat2QImage(cb_projector);
     ui->label->setPixmap(QPixmap::fromImage(s));
-    writeProjectorCalibration(cameraMatrix,distCoeffs);
+    writeProjectorCalibration(projectorMatrix,projectordistCoeffs);
     std::cout << "cameraMatrix:\n" << cameraMatrix << std::endl;
     std::cout << "distCoeffs:\n" << distCoeffs << std::endl;
+    std::cout << "projectorMatrix:\n" << projectorMatrix << std::endl;
+    std::cout << "projectordistCoeffs:\n" << projectordistCoeffs << std::endl;
 }
 
 void projector_calibration::writeProjectorCalibration(cv::Mat cameraMatrix,cv::Mat distCoeffs){
@@ -214,6 +243,51 @@ camera_config projector_calibration::readCameraCalibration(){
     return temp;
 }
 
+
+void projector_calibration::fromCamToWorld(Mat cameraMatrix, vector<Mat> rV, vector<Mat> tV,
+    vector< vector<Point2f> > imgPoints, vector< vector<Point3f> > &worldPoints)
+{
+    int s = (int)rV.size();
+    Mat invK64, invK;
+    invK64 = cameraMatrix.inv();
+    invK64.convertTo(invK, CV_32F);
+
+    for (int i = 0; i < s; ++i)
+    {
+        Mat r, t, rMat;
+        rV[i].convertTo(r, CV_32F);
+        tV[i].convertTo(t, CV_32F);
+
+        Rodrigues(r, rMat);
+        Mat transPlaneToCam = rMat.inv()*t;
+
+        vector<Point3f> wpTemp;
+        int s2 = (int)imgPoints[i].size();
+        for (int j = 0; j < s2; ++j){
+            Mat coords(3, 1, CV_32F);
+            coords.at<float>(0, 0) = imgPoints[i][j].x;
+            coords.at<float>(1, 0) = imgPoints[i][j].y;
+            coords.at<float>(2, 0) = 1.0f;
+
+            Mat worldPtCam = invK*coords;
+            Mat worldPtPlane = rMat.inv()*worldPtCam;
+
+            float scale = transPlaneToCam.at<float>(2) / worldPtPlane.at<float>(2);
+            Mat worldPtPlaneReproject = scale*worldPtPlane - transPlaneToCam;
+
+            Point3f pt;
+            pt.x = worldPtPlaneReproject.at<float>(0);
+            pt.y = worldPtPlaneReproject.at<float>(1);
+            pt.z = 0;
+//            qDebug()<<"camera:"<<imgPoints[i][j].x<<imgPoints[i][j].y<<"world:"<<worldPtPlaneReproject.at<float>(0)<<
+//                      worldPtPlaneReproject.at<float>(1)<<"\n";
+            wpTemp.push_back(pt);
+        }
+
+        worldPoints.push_back(wpTemp);
+    }
+}
+
 void projector_calibration::readFarme()
 {
     capture >> frame;
@@ -221,6 +295,7 @@ void projector_calibration::readFarme()
     {
         cv::Mat cb_final;
         cv::undistort(frame, cb_final, camera_calibration_config.cameraMatrix, camera_calibration_config.distCoeffs);
+        cv::line(cb_final,Point(frame.cols/2,0),Point(frame.cols/2,frame.rows),Scalar(0,0,255),2);
         image = Mat2QImage(cb_final);
         ui->label->setPixmap(QPixmap::fromImage(image));
     }
@@ -258,9 +333,9 @@ void projector_calibration::takingPictures()
     }
     if (!frame.empty()){
         qDebug()<<QApplication::applicationDirPath()+"/photo_projector/" + QString::number(num) + ".jpg";
-        cv::Mat cb_final;
-        cv::undistort(frame, cb_final, camera_calibration_config.cameraMatrix, camera_calibration_config.distCoeffs);
-        image = Mat2QImage(cb_final);
+//        cv::Mat cb_final;
+//        cv::undistort(frame, cb_final, camera_calibration_config.cameraMatrix, camera_calibration_config.distCoeffs);
+        image = Mat2QImage(frame);
         if(image.save(QApplication::applicationDirPath()+"/photo_projector/" + QString::number(num) + ".jpg")){
             num += 1;
         }else{

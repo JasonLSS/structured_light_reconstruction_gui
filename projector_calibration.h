@@ -35,6 +35,8 @@ private slots:
     void findChess();
     void writeProjectorCalibration(cv::Mat cameraMatrix,cv::Mat distCoeffs);
     void close_calibration();
+    void fromCamToWorld(Mat cameraMatrix, vector<Mat> rV, vector<Mat> tV,
+                        vector< vector<Point2f> > imgPoints, vector< vector<Point3f> > &worldPoints);
     camera_config readCameraCalibration();
     QImage Mat2QImage(cv::Mat cvImg);
 
