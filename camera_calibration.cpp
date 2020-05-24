@@ -93,7 +93,7 @@ void camera_calibration::findChess()
     dir.setFilter(QDir::Files);
     int aqXnum = 9;
     int aqYnum = 6;
-    cv::Size square_size = cv::Size(12, 12);
+    cv::Size square_size = cv::Size(30, 30);
     cv::Size image_size;
     printf("Start scan corner\n");
     cv::Mat img;
@@ -109,7 +109,7 @@ void camera_calibration::findChess()
             image_size = cb_source.size();
             cv::cornerSubPix(img, image_points, cv::Size(11, 11), cv::Size(-1, -1),
                              cv::TermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 30, 0.01));
-
+            print(image_points);
             image_points_seq.push_back(image_points);
 
             cv::Mat cb_corner;

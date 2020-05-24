@@ -4,6 +4,10 @@ Single line structured light reconstruction on QT
 
 # Versions
 
+## v1.4
+
+- Add scan mode
+
 ## v1.3
 
 - change algorithm of projector calibration
@@ -12,9 +16,7 @@ Single line structured light reconstruction on QT
 
 - change UI
 
-- add 
-
-- warning message
+- add warning message
 
 ## v1.1
 
