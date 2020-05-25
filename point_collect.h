@@ -27,13 +27,14 @@ private slots:
     void on_btnExit_clicked();
     void login_mainwindow();
     void login_camera_calibration();
-    void openCamara();
+    bool openCamara();
     void readFarme();
     void closeCamara();
     void collectFeature();
     QImage Mat2QImage(cv::Mat cvImg);
     camera_config readCameraCalibration();
     void startScaning();
+    void stopScaning();
     void createScanPicture();
     void StegerLine();
     void ThinSubiteration1(Mat & pSrc, Mat & pDst);

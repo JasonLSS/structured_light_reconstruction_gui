@@ -8,5 +8,6 @@
         <file>image/correct.png</file>
         <file>image/wrong.png</file>
         <file>image/金属按键.png</file>
+        <file>image/bdb.png</file>
     </qresource>
 </RCC>

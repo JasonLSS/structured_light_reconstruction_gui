@@ -4,6 +4,12 @@ Single line structured light reconstruction on QT
 
 # Versions
 
+## v1.5
+
+- complete all projector calibration test
+
+- add stop scan button
+
 ## v1.4
 
 - Add scan mode

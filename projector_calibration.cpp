@@ -73,6 +73,13 @@ void projector_calibration::openCamara()
     if (capture.isOpened())
             capture.release();     //decide if capture is already opened; if so,close it
         capture.open(0);           //open the default camera
+        QString path = QApplication::applicationDirPath()+"/bdb.png";
+        Mat bdb = imread(path.toStdString());
+        double scale = 0.5;
+        Size ResImgSiz = Size(bdb.cols*scale, bdb.rows*scale);
+        cv::resize(bdb,bdb,ResImgSiz,CV_INTER_CUBIC);
+        imshow("bdb",bdb);
+        waitKey(1);
         if (capture.isOpened())
         {
             rate= capture.get(CAP_PROP_FPS);
@@ -112,8 +119,10 @@ void projector_calibration::findChess()
     printf("Start scan corner\n");
     for (int i = 0; i < dir.count(); i++){
         cv::Mat source = cv::imread((path + dir[i]).toStdString());
-        cv::Mat camera_source = source(cv::Range(0,source.rows),cv::Range(0,source.cols/2));
-        cv::Mat projector_source = source(cv::Range(0,source.rows),cv::Range(source.cols/2,source.cols));
+        cv::Mat camera_source = source.clone();
+        cv::rectangle(camera_source,Point(source.cols/2,0),Point(source.cols,source.rows),Scalar(0,0,0),-1,4);
+        cv::Mat projector_source = source.clone();
+        cv::rectangle(projector_source,Point(0,0),Point(source.cols/2,source.rows),Scalar(0,0,0),-1,4);
         if (cv::findChessboardCorners(camera_source, cv::Size(aqXnum, aqYnum), image_points, 0) == 0 or
                 cv::findChessboardCorners(projector_source, cv::Size(aqXnum, aqYnum), projector_points, 0) == 0) {
             printf("Error: Corners not find\n");
@@ -191,6 +200,8 @@ void projector_calibration::findChess()
                         CALIB_FIX_K3);
 
     fromCamToWorld(cameraMatrix, rvecsMat, tvecsMat, image_points_seq, worldPointsProj);
+    print(worldPointsProj[0]);
+    print(projector_points_seq[0]);
     cv::calibrateCamera(worldPointsProj, projector_points_seq, image_size2, projectorMatrix, projectordistCoeffs,
                         prorvecsMat, protvecsMat,CALIB_FIX_K3);
     cv::Mat cb_source = cv::imread((path +dir[0]).toStdString());
@@ -355,6 +366,7 @@ void projector_calibration::closeCamara()
     capture.release();
     timer->stop();
     ui->label->setText("摄像头关闭");
+    destroyAllWindows();
     frame.release();
 
 }

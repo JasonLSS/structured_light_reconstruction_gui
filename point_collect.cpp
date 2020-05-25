@@ -26,7 +26,7 @@ point_collect::point_collect(QWidget *parent) :
     setStyleSheet("QMainWindow{color:#E8E8E8;}");
     connect(ui->btnBack,SIGNAL(clicked()),this,SLOT(login_mainwindow()));
     connect(ui->start_scanbt,SIGNAL(clicked()),this,SLOT(startScaning()));
-
+    connect(ui->stop_scanbt,SIGNAL(clicked()),this,SLOT(stopScaning()));
     timer = new QTimer(this);
     scantimer = new QTimer(this);
     num = 1;
@@ -68,12 +68,12 @@ QImage point_collect::Mat2QImage(cv::Mat cvImg)
     return qImg;
 }
 
-void point_collect::openCamara()
+bool point_collect::openCamara()
 {
     camera_calibration_config = readCameraCalibration();
     if (camera_calibration_config.distCoeffs.empty()){
         login_camera_calibration();
-        return;
+        return true;
     }
     if (capture.isOpened())
             capture.release();     //decide if capture is already opened; if so,close it
@@ -91,9 +91,11 @@ void point_collect::openCamara()
                 connect(timer, SIGNAL(timeout()), this, SLOT(collectFeature()));
                 timer->start();
             }
+            return true;
         }
         else{
             QMessageBox::warning(this,"警告","无法打开摄像头，请检测设备连接");
+            return false;
         }
 }
 
@@ -120,9 +122,13 @@ void point_collect::collectFeature()
 //        cvtColor(g_srcImage, g_hsvImage, CV_RGB2HSV);
         cvtColor(frame, g_hsvImage, CV_RGB2HSV);
         imshow("HSV", g_hsvImage);
-
-        inRange(g_hsvImage, Scalar(30, 40, 40), Scalar(80, 240, 240), imgHSVMask);
+        inRange(g_hsvImage, Scalar(30, 40, 40), Scalar(80, 250, 250), imgHSVMask);
         imshow("mask", imgHSVMask);
+
+//        cvtColor(frame, g_grayImage, CV_RGB2GRAY);
+//        imshow("gray", g_grayImage);
+//        threshold(g_grayImage, imgHSVMask, threshold_value, 255, THRESH_BINARY);
+
         g_midImage = Mat::zeros(imgHSVMask.size(), CV_8UC1);  //绘制
 
         //去除小面积区域
@@ -468,9 +474,23 @@ void point_collect::Delete_smallregions(Mat & pSrc, Mat & pDst)
 
 void point_collect::startScaning()
 {
-    scantimer->setInterval(60);   //set timer match with FPS
-    connect(scantimer, SIGNAL(timeout()), this, SLOT(createScanPicture()));
-    scantimer->start();
+    if(openCamara()){
+        scantimer->setInterval(60);   //set timer match with FPS
+        connect(scantimer, SIGNAL(timeout()), this, SLOT(createScanPicture()));
+        scantimer->start();
+    }
+}
+
+void point_collect::stopScaning()
+{
+    if(openCamara()){
+        scantimer->stop();
+        pic_num = 0;
+        scanpic = Mat(800, 1200, CV_8UC3, Scalar(255, 255, 255));
+        rectangle(scanpic, cv::Rect(0, 0, 1200, 800), cv::Scalar(0, 255, 0), 4);
+        putText(scanpic, "Put target in the rectangle", cv::Point(200, 400), cv::FONT_HERSHEY_SIMPLEX,2, cv::Scalar(0, 0, 255), 8);
+        imshow("scan",scanpic);
+    }
 }
 
 void point_collect::createScanPicture(){
@@ -489,7 +509,7 @@ void point_collect::createScanPicture(){
     else if (pic_num < 1201){
         scanpic = Mat(800, 1200, CV_8UC3, Scalar(0, 0, 0));
         rectangle(scanpic, cv::Rect(0, 0, 1200, 800), cv::Scalar(0, 0, 255), 4);
-        line(scanpic,cv::Point(pic_num,0),cv::Point(pic_num,800),cv::Scalar(0, 255, 0),5);
+        line(scanpic,cv::Point(pic_num,0),cv::Point(pic_num,800),cv::Scalar(0, 255, 0),3);
     }
     ++pic_num;
     imshow("scan",scanpic);
