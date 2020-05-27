@@ -60,7 +60,7 @@ void MainWindow::login_projector_calibration(){
 
 void MainWindow::login_point_show(){
     qDebug()<<"point_show";
-    projector_calibration *win = new projector_calibration;
+    point_show *win = new point_show;
     win->show();
     this->close();
 }

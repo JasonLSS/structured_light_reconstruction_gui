@@ -36,12 +36,15 @@ private slots:
     void startScaning();
     void stopScaning();
     void createScanPicture();
-    void StegerLine();
+    void StegerLine(Mat frame);
     void ThinSubiteration1(Mat & pSrc, Mat & pDst);
     void ThinSubiteration2(Mat & pSrc, Mat & pDst);
     void normalizeLetter(Mat & inputarray, Mat & outputarray);
     void Line_reflect(Mat & inputarray, Mat & outputarray);
     void Delete_smallregions(Mat & pSrc, Mat & pDst);
+    void fromCamToWorld( vector<Point2f> imgPoints, vector<Point3f> &worldPoints);
+    void point_change(vector<Point2f> &imgPoints,float first_point_x,vector<cv::Point3f> &worldPoints);
+    vector<Point2f> max_point(Mat & pSrc, Mat & pDst);
 
 private:
     Ui::point_collect *ui;
@@ -53,6 +56,7 @@ private:
     QFont mIconFont;
 
     cv::Mat frame;
+    cv::Mat start_frame;
     cv::VideoCapture capture;
     QImage  image;
     QTimer *timer;
@@ -62,12 +66,20 @@ private:
     double num;
     camera_config camera_calibration_config;
 
-    Mat g_srcImage, g_hsvImage, g_dstImage, g_midImage, g_grayImage, imgHSVMask;//原始图、中间图和效果图
-    int threshold_value = 60;	//阈值
-    int aerasize = 200;				//面积因子
+    Mat g_srcImage, g_hsvImage, g_dstImage, g_midImage, g_grayImage, imgHSVMask, imgThreshold;//原始图、中间图和效果图
+    int threshold_value = 3;	//阈值
+    int aerasize = 10;				//面积因子
 
     int pic_num = 0;
     Mat scanpic;
+
+    cv::Mat cameraMatrix;
+    cv::Mat distCoeffs;
+    std::vector<cv::Mat> tvecsMat;
+    std::vector<cv::Mat> rvecsMat;
+    bool start_scan_flag = false;
+    vector<cv::Point3f> worldPoints;
+    int count_start = 0;
 };
 
 #endif // POINT_COLLECT_H

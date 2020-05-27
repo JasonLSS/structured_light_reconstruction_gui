@@ -4,6 +4,16 @@ Single line structured light reconstruction on QT
 
 # Versions
 
+## v2.0
+
+- Complete all mode, add point show
+
+- Modify structured light acquisition process
+
+- [BUG] first collect maybe slow
+
+- [BUG] some file type may lead unexpected error
+
 ## v1.5
 
 - complete all projector calibration test

@@ -34,7 +34,8 @@ private slots:
     void takingPictures();
     void clearFolder();
     void findChess();
-    void writeCalibration(cv::Mat cameraMatrix,cv::Mat distCoeffs);
+    void writeCalibration(cv::Mat cameraMatrix,cv::Mat distCoeffs,
+                          std::vector<cv::Mat> tvecsMat, std::vector<cv::Mat> rvecsMat);
     void close_calibration();
     QImage Mat2QImage(cv::Mat cvImg);
     camera_config readCalibration();

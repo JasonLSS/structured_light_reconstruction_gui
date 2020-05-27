@@ -1,7 +1,8 @@
 ﻿#ifndef POINT_SHOW_H
 #define POINT_SHOW_H
 #include "mainwindow.h"
-
+#include "myqopenglwidget.h"
+#include <QFileDialog>
 namespace Ui {
 class point_show;
 }
@@ -20,12 +21,16 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     virtual bool nativeEvent(const QByteArray &eventType, void *message, long *result);
+    MyQOpenglWidget* m_pOpenglWidget;
+    std::vector<QVector3D> ReadVec3PointCloud(QString path);
+
 
 private slots:
     void on_btnMin_clicked();
     void on_btnMax_clicked();
     void on_btnExit_clicked();
     void login_mainwindow();
+    void open_file();
 
 private:
     Ui::point_show *ui;

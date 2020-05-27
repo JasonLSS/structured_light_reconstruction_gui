@@ -15,6 +15,7 @@
 #include <QTimer>
 #include <QDir>
 #include <QMessageBox>
+#include <fstream>
 
 using namespace cv;
 using namespace std;

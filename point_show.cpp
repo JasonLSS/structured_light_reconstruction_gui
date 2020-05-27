@@ -26,6 +26,9 @@ point_show::point_show(QWidget *parent) :
 //设置背景颜色
     setStyleSheet("QMainWindow{color:#E8E8E8;}");
     connect(ui->btnBack,SIGNAL(clicked()),this,SLOT(login_mainwindow()));
+    m_pOpenglWidget = new MyQOpenglWidget(ui->openGLWidget);
+    m_pOpenglWidget->resize(ui->openGLWidget->width(),ui->openGLWidget->height());
+    connect(ui->openbt,SIGNAL(clicked()),this,SLOT(open_file()));
 }
 
 point_show::~point_show()
@@ -38,6 +41,56 @@ void point_show::login_mainwindow(){
     MainWindow *win = new MainWindow;
     win->show();
     this->close();
+}
+
+
+void point_show::open_file()
+{
+    std::vector<QVector3D> cloud;
+
+    QFileDialog *fileDialog = new QFileDialog(this);
+    fileDialog->setWindowTitle(tr("打开文件"));
+    fileDialog->setDirectory(".");
+    fileDialog->setNameFilter(tr("text(*.txt)"));
+    fileDialog->setFileMode(QFileDialog::ExistingFiles);
+    fileDialog->setViewMode(QFileDialog::Detail);
+    QStringList fileNames;
+    if (fileDialog->exec())
+    {
+    fileNames = fileDialog->selectedFiles();
+    }
+
+    cloud= ReadVec3PointCloud(fileNames[0]);
+    m_pOpenglWidget->showPointCloud(cloud);
+
+}
+
+std::vector<QVector3D> point_show::ReadVec3PointCloud(QString path)
+{
+    std::vector<QVector3D> cloud;
+    QFile file(path);
+    if (!file.open(QFile::ReadOnly | QIODevice::Text))
+    {
+        qDebug() << "There is no file" ;
+        return cloud;
+    }
+    QTextStream in(&file);
+    QString ramData = in.readAll();
+    QStringList list = ramData.split("\n");
+    QStringList listline;
+    cloud.resize(list.count()-1);
+    for (int i = 0; i < list.count() - 1; i++)
+    {
+        listline = list.at(i).split(" ");
+        if(listline.size()>=3)
+        {
+            cloud[i].setX((listline.at(0).toFloat()));
+            cloud[i].setY((listline.at(1).toFloat()));
+            cloud[i].setZ((listline.at(2).toFloat()));
+        }
+    }
+    qDebug()<<cloud;
+    return cloud;
 }
 
 //双击放大缩小

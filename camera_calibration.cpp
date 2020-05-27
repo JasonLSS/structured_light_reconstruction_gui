@@ -166,13 +166,14 @@ void camera_calibration::findChess()
     cv::undistort(cb_source, cb_final, cameraMatrix, distCoeffs);
     QImage s = Mat2QImage(cb_final);
     ui->label->setPixmap(QPixmap::fromImage(s));
-    writeCalibration(cameraMatrix,distCoeffs);
+    writeCalibration(cameraMatrix,distCoeffs,rvecsMat, tvecsMat);
     camera_config read = readCalibration();
     std::cout << "cameraMatrix:\n" << read.cameraMatrix << std::endl;
     std::cout << "distCoeffs:\n" << read.distCoeffs << std::endl;
 }
 
-void camera_calibration::writeCalibration(cv::Mat cameraMatrix,cv::Mat distCoeffs){
+void camera_calibration::writeCalibration(cv::Mat cameraMatrix,cv::Mat distCoeffs,
+                                          std::vector<cv::Mat> tvecsMat, std::vector<cv::Mat> rvecsMat){
     QString config_path = QApplication::applicationDirPath()+"/config/";
     QDir config_Dir(config_path);
     if(!config_Dir.exists()){
@@ -181,6 +182,8 @@ void camera_calibration::writeCalibration(cv::Mat cameraMatrix,cv::Mat distCoeff
     FileStorage fs((config_path+"camera.xml").toStdString(), FileStorage::WRITE);
     fs << "cameraMatrix" << cameraMatrix;
     fs << "distCoeffs" << distCoeffs;
+    fs << "tvecsMat" << tvecsMat;
+    fs << "rvecsMat" << rvecsMat;
     fs.release();
 }
 camera_config camera_calibration::readCalibration(){

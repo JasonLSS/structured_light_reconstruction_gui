@@ -31,6 +31,8 @@ SOURCES += \
     point_collect.cpp \
     point_show.cpp \
     projector_calibration.cpp \
+    MinBoundingBox.cpp \
+    myqopenglwidget.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -38,6 +40,8 @@ HEADERS += \
     projector_calibration.h \
     point_show.h \
     point_collect.h \
+    MinBoundingBox.h \
+    myqopenglwidget.h
 
 
 FORMS += \

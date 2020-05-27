@@ -33,10 +33,27 @@ point_collect::point_collect(QWidget *parent) :
 
     scanpic = Mat(800, 1200, CV_8UC3, Scalar(255, 255, 255)); //绘制
     rectangle(scanpic, cv::Rect(0, 0, 1200, 800), cv::Scalar(0, 255, 0), 4);
-    putText(scanpic, "Put target in the rectangle", cv::Point(200, 400), cv::FONT_HERSHEY_SIMPLEX,2, cv::Scalar(0, 0, 255), 8);
+    putText(scanpic, "Put target in the windows", cv::Point(200, 400), cv::FONT_HERSHEY_SIMPLEX,2, cv::Scalar(0, 0, 255), 8);
     imshow("scan",scanpic);
     waitKey(1);
-
+    QString config_path = QApplication::applicationDirPath()+"/config/";
+    QDir config_Dir(config_path);
+    if(!config_Dir.exists()){
+        QMessageBox::warning(this,"警告","未找到标定文件");
+        return;
+    }
+    QFileInfo fileInfo(config_path + "camera.xml");
+    if(!fileInfo.isFile())
+    {
+        QMessageBox::warning(this,"警告","未找到标定文件");
+        return;
+    }
+    FileStorage fs((config_path+"camera.xml").toStdString(), FileStorage::READ);
+    fs["cameraMatrix"] >> cameraMatrix;
+    fs["distCoeffs"] >> distCoeffs;
+    fs["tvecsMat"] >> rvecsMat;
+    fs["tvecsMat"] >> tvecsMat;
+    fs.release();
     openCamara();
 }
 
@@ -76,7 +93,7 @@ bool point_collect::openCamara()
         return true;
     }
     if (capture.isOpened())
-            capture.release();     //decide if capture is already opened; if so,close it
+        capture.release();     //decide if capture is already opened; if so,close it
         capture.open(0);           //open the default camera
         if (capture.isOpened())
         {
@@ -120,24 +137,41 @@ void point_collect::collectFeature()
 //        QString path = QApplication::applicationDirPath()+"/1.png";
 //        g_srcImage = imread(path.toStdString());
 //        cvtColor(g_srcImage, g_hsvImage, CV_RGB2HSV);
-        cvtColor(frame, g_hsvImage, CV_RGB2HSV);
-        imshow("HSV", g_hsvImage);
-        inRange(g_hsvImage, Scalar(30, 40, 40), Scalar(80, 250, 250), imgHSVMask);
-        imshow("mask", imgHSVMask);
+//        cvtColor(frame, g_hsvImage, CV_RGB2HSV);
+//        imshow("HSV", g_hsvImage);
+//        inRange(g_hsvImage, Scalar(30, 40, 40), Scalar(80, 250, 250), imgHSVMask);
+//        imshow("mask", imgHSVMask);
 
 //        cvtColor(frame, g_grayImage, CV_RGB2GRAY);
 //        imshow("gray", g_grayImage);
 //        threshold(g_grayImage, imgHSVMask, threshold_value, 255, THRESH_BINARY);
+        if(start_frame.empty()){
+            start_frame = Mat::zeros(frame.size(), CV_8UC3);
+        }
+        temp = frame - start_frame;
+//        imshow("minus", temp);
+        cvtColor(temp, g_grayImage, CV_RGB2GRAY);
+//        imshow("gray", g_grayImage);
+        threshold(g_grayImage, imgThreshold, 10, 255, THRESH_BINARY);
+//        imshow("threshold", imgThreshold);
 
-        g_midImage = Mat::zeros(imgHSVMask.size(), CV_8UC1);  //绘制
+        g_midImage = Mat::zeros(imgThreshold.size(), CV_32FC1);  //绘制
+        g_dstImage = Mat::zeros(imgThreshold.size(), CV_32FC1);
 
         //去除小面积区域
-        Delete_smallregions(imgHSVMask, g_midImage);
-        imshow("target", g_midImage);
+        Delete_smallregions(imgThreshold, g_midImage);
+//        imshow("target", g_midImage);
 
         //normalizeLetter显示效果图
-        normalizeLetter(g_midImage,g_dstImage);
-        imshow("effect", g_dstImage);
+//        normalizeLetter(g_midImage,g_dstImage);
+        vector<Point2f> imgPoints;
+        imgPoints = max_point(g_midImage,g_dstImage);
+//        imshow("max", g_dstImage);
+
+//        imshow("effect", g_dstImage);
+//        if(!start_frame.empty()){
+//            imshow("start_frame",start_frame);
+//        }
 
         //曲线映射到原图
 //        Line_reflect(g_dstImage,g_midImage);
@@ -146,15 +180,114 @@ void point_collect::collectFeature()
         //转换类型，保存skeleton图像
         normalize(g_dstImage, g_midImage, 0, 255, NORM_MINMAX, CV_8U);
 
-        waitKey(1);
+        float first_point_x = -1;
+//        int rows = g_dstImage.rows;
+//        int cols = g_dstImage.cols;
+//        Mat ss = Mat::zeros(imgThreshold.size()*2, CV_8UC1);
+//        imshow("src",g_midImage);
+//        print(g_midImage);
+//        waitKey(0);
+
+//        fromCamToWorld(imgPoints,worldPoints);
+
+        if(start_scan_flag){
+            count_start++;
+            if(count_start>30 && !imgPoints.empty()){
+//                qDebug()<<count_start;
+//                for(int i = 5; i < rows-5; i++) {
+//                    for(int j = 5; j < cols-5; j++) {
+//        //                qDebug()<<g_midImage.at<float>(i, j);
+//                        if (g_dstImage.at<float>(i, j) > 0) {
+//                            Point2f temp;
+//        //                    qDebug()<<"cols"<<cols<<"rows"<<rows;
+//                            temp.x = j;
+//                            temp.y = i;
+//                            ss.at<float>(i, j) = 250;
+//                            if(first_point_x < 0){
+//                                first_point_x = j;
+//                            }
+//                            imgPoints.push_back(temp);
+//                        }
+//                    }
+//                }
+//                imshow("s",ss);
+                first_point_x = imgPoints[0].x;
+//                print(imgPoints);
+                point_change(imgPoints,first_point_x,worldPoints);
+            }
+        }else{
+            if(!worldPoints.empty()){
+                QString model_path = QApplication::applicationDirPath()+"/models/";
+                QDir config_Dir(model_path);
+                if(!config_Dir.exists()){
+                    config_Dir.mkdir(model_path);
+                }
+                fstream ofs;
+                ofs.open((model_path+"model.txt").toStdString(), ios::out);
+                int count = worldPoints.size();
+                for(int i=0;i < count ;i++){
+                    ofs << worldPoints[i].x<<" "<<worldPoints[i].y<<" "<<worldPoints[i].z<<endl;
+                }
+                ofs.close();
+                worldPoints.clear();
+            }
+            count_start = 0;
+        }
         QImage s = Mat2QImage(g_midImage);
         ui->feature_view->setPixmap(QPixmap::fromImage(s));
-//        StegerLine();
+//        StegerLine(temp);
     }
 }
 
+void point_collect::point_change(vector<Point2f> &imgPoints,float first_point_x,vector<cv::Point3f> &worldPoints){
+    if(!imgPoints.empty()){
+        for(int i = 0; i < imgPoints.size(); i++) {
+            float imgx = imgPoints[i].y;
+            float imgy = imgPoints[i].x;
+            first_point_x = imgPoints[0].y;
+//            qDebug()<<imgx<<imgy;
+            cv::Point3f temp;
+            float dz = (imgx-first_point_x);
+            temp.x = first_point_x + 0.1f*dz;
+            temp.y = imgy;
+            temp.z = dz;
+            if(temp.x< 400){
+                worldPoints.push_back(temp);
+            }
 
-void point_collect::StegerLine()
+        }
+    }
+}
+
+vector<Point2f> point_collect::max_point(Mat & pSrc, Mat & pDst){
+    int rows = pSrc.rows;
+    int cols = pSrc.cols;
+
+    vector<Point2f> temp_seq;
+    Point2f temp_point;
+    for(int i = 0; i < rows; i++) {
+        float sum = 0;
+        int count = 0;
+        for(int j = 0; j < cols; j++) {
+            if(pSrc.at<float>(i, j) > 0){
+                sum += j;
+                count+=1;
+            }
+        }
+        if(sum > 0){
+            sum /= count;
+            pDst.at<float>(i,(int)sum) = 255;
+            temp_point.x = i;
+            temp_point.y = (int)sum;
+            temp_seq.push_back(temp_point);
+
+        }
+    }
+//    print(temp_seq);
+    return temp_seq;
+}
+
+void point_collect::StegerLine(Mat frame)
 {
     Mat img0 = frame;
     Mat img;
@@ -248,6 +381,7 @@ void point_collect::closeCamara()
     capture.release();
     timer->stop();
     scantimer->stop();
+    start_scan_flag = false;
     ui->label->setText("摄像头关闭");
     frame.release();
 }
@@ -475,7 +609,7 @@ void point_collect::Delete_smallregions(Mat & pSrc, Mat & pDst)
 void point_collect::startScaning()
 {
     if(openCamara()){
-        scantimer->setInterval(60);   //set timer match with FPS
+        scantimer->setInterval(120);   //set timer match with FPS
         connect(scantimer, SIGNAL(timeout()), this, SLOT(createScanPicture()));
         scantimer->start();
     }
@@ -485,31 +619,43 @@ void point_collect::stopScaning()
 {
     if(openCamara()){
         scantimer->stop();
+        start_scan_flag = false;
         pic_num = 0;
         scanpic = Mat(800, 1200, CV_8UC3, Scalar(255, 255, 255));
         rectangle(scanpic, cv::Rect(0, 0, 1200, 800), cv::Scalar(0, 255, 0), 4);
-        putText(scanpic, "Put target in the rectangle", cv::Point(200, 400), cv::FONT_HERSHEY_SIMPLEX,2, cv::Scalar(0, 0, 255), 8);
+        putText(scanpic, "Put target in the windows", cv::Point(200, 400), cv::FONT_HERSHEY_SIMPLEX,2, cv::Scalar(0, 0, 255), 8);
         imshow("scan",scanpic);
     }
 }
 
 void point_collect::createScanPicture(){
-    if (pic_num > 1200){
+    int delay = 60;
+    if (pic_num > 1200+delay){
         scanpic = Mat(800, 1200, CV_8UC3, Scalar(255, 255, 255));
         rectangle(scanpic, cv::Rect(0, 0, 1200, 800), cv::Scalar(0, 255, 0), 4);
         putText(scanpic, "Complete!", cv::Point(200, 400), cv::FONT_HERSHEY_SIMPLEX,2, cv::Scalar(0, 0, 255), 8);
-        if (pic_num > 1260){
+        if (pic_num > 1250+delay){
             scantimer->stop();
+            start_scan_flag = false;
             pic_num = 0;
             scanpic = Mat(800, 1200, CV_8UC3, Scalar(255, 255, 255));
             rectangle(scanpic, cv::Rect(0, 0, 1200, 800), cv::Scalar(0, 255, 0), 4);
-            putText(scanpic, "Put target in the rectangle", cv::Point(200, 400), cv::FONT_HERSHEY_SIMPLEX,2, cv::Scalar(0, 0, 255), 8);
+            putText(scanpic, "Put target in the windows", cv::Point(200, 400), cv::FONT_HERSHEY_SIMPLEX,2, cv::Scalar(0, 0, 255), 8);
         }
     }
-    else if (pic_num < 1201){
-        scanpic = Mat(800, 1200, CV_8UC3, Scalar(0, 0, 0));
-        rectangle(scanpic, cv::Rect(0, 0, 1200, 800), cv::Scalar(0, 0, 255), 4);
-        line(scanpic,cv::Point(pic_num,0),cv::Point(pic_num,800),cv::Scalar(0, 255, 0),3);
+    else if (pic_num < 1201+delay){
+        start_scan_flag = true;
+        if (pic_num < delay){
+            scanpic = Mat(800, 1200, CV_8UC3, Scalar(0, 0, 0));
+            rectangle(scanpic, cv::Rect(0, 0, 1200, 800), cv::Scalar(0, 0, 255), 4);
+            start_frame = frame.clone();
+//            waitKey(1);
+        }else{
+            scanpic = Mat(800, 1200, CV_8UC3, Scalar(0, 0, 0));
+            rectangle(scanpic, cv::Rect(0, 0, 1200, 800), cv::Scalar(0, 0, 255), 4);
+            line(scanpic,cv::Point(pic_num-delay,0),cv::Point(pic_num-delay,800),cv::Scalar(0, 255, 0),3);
+        }
+
     }
     ++pic_num;
     imshow("scan",scanpic);
@@ -523,6 +669,46 @@ void point_collect::login_camera_calibration(){
     destroyAllWindows();
     this->close();
 
+}
+
+void point_collect::fromCamToWorld(vector<Point2f> imgPoints,vector<Point3f> &worldPoints)
+{
+    Mat invK64, invK;
+    invK64 = cameraMatrix.inv();
+    invK64.convertTo(invK, CV_32F);
+
+        Mat r, t, rMat;
+        rvecsMat[0].convertTo(r, CV_32F);
+        tvecsMat[0].convertTo(t, CV_32F);
+
+        Rodrigues(r, rMat);
+        Mat transPlaneToCam = rMat.inv()*t;
+
+        vector<Point3f> wpTemp;
+        int s2 = (int)imgPoints.size();
+        for (int j = 0; j < s2; ++j){
+            Mat coords(3, 1, CV_32F);
+            coords.at<float>(0, 0) = imgPoints[j].x;
+            coords.at<float>(1, 0) = imgPoints[j].y;
+            coords.at<float>(2, 0) = 1.0f;
+
+            Mat worldPtCam = invK*coords;
+            Mat worldPtPlane = rMat.inv()*worldPtCam;
+
+            float scale = transPlaneToCam.at<float>(2) / worldPtPlane.at<float>(2);
+            Mat worldPtPlaneReproject = scale*worldPtPlane - transPlaneToCam;
+
+            Point3f pt;
+            pt.x = worldPtPlaneReproject.at<float>(0);
+            pt.y = worldPtPlaneReproject.at<float>(1);
+            pt.z = 0;
+//            qDebug()<<"camera:"<<imgPoints[i][j].x<<imgPoints[i][j].y<<"world:"<<worldPtPlaneReproject.at<float>(0)<<
+//                      worldPtPlaneReproject.at<float>(1)<<"\n";
+            wpTemp.push_back(pt);
+
+
+        }
+        worldPoints= wpTemp;
 }
 
 
