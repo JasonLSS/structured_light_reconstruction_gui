@@ -107,7 +107,7 @@ bool point_show::eventFilter(QObject *obj, QEvent *e)
     return QObject::eventFilter(obj, e);
 }
 //拖拉缩放窗口
-bool point_show::nativeEvent(const QByteArray &eventType, void *message, long *result)
+bool point_show::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
 {
     MSG* pMsg = (MSG*)message;
     switch (pMsg->message)
@@ -208,7 +208,11 @@ void point_show::on_btnMax_clicked()
     else
     {
         mLocation = geometry();
-        setGeometry(qApp->desktop()->availableGeometry());
+        QScreen *screen = QGuiApplication::primaryScreen();
+        if (screen)
+        {
+            setGeometry(screen->availableGeometry());
+        }
         ui->btnMax->setIcon(QIcon(":/image/max2.png"));
         ui->btnMax->setToolTip(QStringLiteral("还原"));
     }

@@ -5,7 +5,6 @@
 #include "point_collect.h"
 #include "point_show.h"
 #include <QDebug>
-#include <QDesktopWidget>
 #include <qt_windows.h>
 
 const int g_nBorder = 6;
@@ -85,7 +84,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *e)
     return QObject::eventFilter(obj, e);
 }
 
-bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, long *result)
+bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
 {
     MSG* pMsg = (MSG*)message;
     switch (pMsg->message)
@@ -181,7 +180,11 @@ void MainWindow::on_btnMax_clicked()
     else
     {
         mLocation = geometry();
-        setGeometry(qApp->desktop()->availableGeometry());
+        QScreen *screen = QGuiApplication::primaryScreen();
+        if (screen)
+        {
+            setGeometry(screen->availableGeometry());
+        }
         ui->btnMax->setIcon(QIcon(":/image/max2.png"));
         ui->btnMax->setToolTip(QStringLiteral("还原"));
     }

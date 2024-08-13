@@ -2,7 +2,7 @@
 #define MYQOPENGLWIDGET_H
 #include <QtGui/QWindow>
 #include <QtGui/QOpenGLFunctions>
-#include <QtWidgets/QOpenGLWidget>
+#include <QOpenGLWidget>
 #include <QOpenGLVertexArrayObject>
 #include <QPainter>
 #include <QOpenGLContext>

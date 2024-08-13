@@ -309,7 +309,7 @@ void MyQOpenglWidget::onTimerOut()
 
 void MyQOpenglWidget::mousePressEvent(QMouseEvent *e)
 {
-	if (e->buttons()&Qt::LeftButton || e->buttons()&Qt::MidButton)
+    if (e->buttons()&Qt::LeftButton)
 	{
 		setMouseTracking(true);
 		m_lastPoint = QVector2D(e->localPos());
@@ -322,10 +322,6 @@ void MyQOpenglWidget::mouseMoveEvent(QMouseEvent *e)
     {
         Rotate(QVector2D(m_lastPoint), QVector2D(e->localPos()));
     }
-    if (e->buttons()&Qt::MidButton)
-    {
-        LineMove(m_lastPoint, QVector2D(e->localPos()));
-    }
     m_lastPoint = QVector2D(e->localPos());
 }
 
@@ -336,11 +332,11 @@ void MyQOpenglWidget::mouseReleaseEvent(QMouseEvent *e)
 
 void MyQOpenglWidget::wheelEvent(QWheelEvent *e)
 {   
-    if(e->delta() > 0){
-        modelZoomInOrOut(true);
-    }else{
-        modelZoomInOrOut(false);
-    }
+    // if(e->delta() > 0){
+    //     modelZoomInOrOut(true);
+    // }else{
+    //     modelZoomInOrOut(false);
+    // }
 }
 
 void MyQOpenglWidget::keyPressEvent(QKeyEvent *e)

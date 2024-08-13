@@ -20,7 +20,7 @@ protected:
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
-    virtual bool nativeEvent(const QByteArray &eventType, void *message, long *result);
+    virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result);
     MyQOpenglWidget* m_pOpenglWidget;
     std::vector<QVector3D> ReadVec3PointCloud(QString path);
 

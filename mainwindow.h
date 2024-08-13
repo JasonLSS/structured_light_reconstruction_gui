@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include <QMouseEvent>
-#include <QDesktopWidget>
+#include <QScreen>
 #include <qt_windows.h>
 #include <QDebug>
 #include "opencv2/opencv.hpp"
@@ -41,7 +41,7 @@ protected:
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
-    virtual bool nativeEvent(const QByteArray &eventType, void *message, long *result);
+    virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result);
 
 private slots:
     void on_btnMin_clicked();

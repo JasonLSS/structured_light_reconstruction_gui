@@ -308,7 +308,7 @@ bool camera_calibration::eventFilter(QObject *obj, QEvent *e)
     return QObject::eventFilter(obj, e);
 }
 
-bool camera_calibration::nativeEvent(const QByteArray &eventType, void *message, long *result)
+bool camera_calibration::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
 {
     MSG* pMsg = (MSG*)message;
     switch (pMsg->message)
@@ -404,7 +404,11 @@ void camera_calibration::on_btnMax_clicked()
     else
     {
         mLocation = geometry();
-        setGeometry(qApp->desktop()->availableGeometry());
+        QScreen *screen = QGuiApplication::primaryScreen();
+        if (screen)
+        {
+            setGeometry(screen->availableGeometry());
+        }
         ui->btnMax->setIcon(QIcon(":/image/max2.png"));
         ui->btnMax->setToolTip(QStringLiteral("还原"));
     }

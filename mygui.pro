@@ -57,12 +57,14 @@ RESOURCES += \
 
 RC_FILE = app.rc
 
+INCLUDEPATH += D:/opencv/opencv/build/include
+DEPENDPATH += D:/opencv/opencv/build/include
 
-INCLUDEPATH += $$PWD/OpenCV/include
-DEPENDPATH += $$PWD/OpenCV/include
+LIBS += D:/opencv/opencv/build/x64/vc16/lib/opencv_world490.lib
+LIBS += D:/opencv/opencv/build/x64/vc16/lib/opencv_world490d.lib
 
-LIBS += $$PWD/OpenCV/lib/libopencv_*.a
-LIBS += $$PWD/OpenCV/bin/libopencv_*.dll
+# LIBS += D:/opencv/opencv/build/x64/vc16/lib/opencv_*.lib
+# LIBS += D:/opencv/opencv/build/x64/vc16/bin/opencv_*.dll
 #LIBS += D:/bs/OpenCV/lib/libopencv_highgui430.dll.a
 #LIBS += D:/bs/OpenCV/lib/libopencv_core430.dll.a
 #LIBS += D:/bs/OpenCV/lib/libopencv_highgui430.dll.a
